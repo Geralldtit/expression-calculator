@@ -7,6 +7,7 @@ var operatorsStack = [];
 var elements = [];
 
 function expressionCalculator(expr) {
+  clearStacks();
   elements = parseExpression(expr);
 
   for(let i = 0; i < elements.length; i++){
@@ -16,7 +17,7 @@ function expressionCalculator(expr) {
           operatorsStack.push(elements[i]);
           break;
         case ')':
-          // TODO:
+          calculateBracketsExpression(i);
           break;
         default:
           calculateStack(i);
@@ -25,21 +26,52 @@ function expressionCalculator(expr) {
        numberStack.push(parseFloat(elements[i]));
   }
 
-  return calculateOperation();
+  while(numberStack.length > 1){
+    calculateSimpleExpression();
+  }
+
+  if(operatorsStack.length > 0)
+    throw "ExpressionError: Brackets must be paired"
+
+  return numberStack[0];
 }
 
 function calculateStack(i){
-  if(operatorsStack.length == 0 ||
+  if(operatorsStack.length == 0 || operatorsStack[operatorsStack.length-1] == '(' ||
       priority[elements[i]] > priority[operatorsStack[operatorsStack.length-1]]) {
-    operatorsStack.push(elements[i])
+    operatorsStack.push(elements[i]);
   }
   else{
-    if(operatorsStack.length > 1){
-      numberStack.push(calculateOperation());
-      operatorsStack.pop();
-      calculateStack(i)
+    if(operatorsStack.length > 0){
+      calculateSimpleExpression();
+      calculateStack(i);
     } else throw "Error: Number of operators more than quantity of numbers!";
   }
+}
+
+function calculateBracketsExpression(i){
+  let count = operatorsStack.length - 1;
+  while(true){
+    if(count < 0) {
+      throw "ExpressionError: Brackets must be paired"
+    }else {
+      if(operatorsStack[count] == '('){
+        operatorsStack.pop();
+        break;
+      }else{
+        calculateSimpleExpression();
+      }
+    }
+    count--;
+  }
+
+}
+
+function calculateSimpleExpression(){
+  let temp = calculateOperation();
+  if (temp == Infinity || temp== -Infinity) throw "TypeError: Division by zero.";
+  numberStack.push(temp);
+  operatorsStack.pop();
 }
 
 function calculateOperation(){
@@ -60,8 +92,10 @@ function parseExpression(str){
             .split(' ');
 }
 
-module.exports = {
-    expressionCalculator
+function clearStacks(){
+  numberStack = [];
+  operatorsStack = [];
+  elements = [];
 }
 
 const priority = {
@@ -78,3 +112,7 @@ const operators = {
   '*': (x, y) => x * y,
   '/': (x, y) => x / y
 };
+
+module.exports = {
+    expressionCalculator
+}
